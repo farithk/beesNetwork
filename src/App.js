@@ -37,6 +37,9 @@ export default function App() {
   const [allMovements, setAllMovements] = useState([0,0,0]);
   const [allPaths, setAllPaths] = useState([[0,0,0]]);
 
+  let hexaColors = ["F43B86", "3D087B", "77D970", "172774", "A2D2FF", "FF865E", "1C7947", "00C1D4", "185ADB", "FC92E3",
+                    "A6F0C6", "FF414D", "480032", "FEE440", "290FBA", "F8485E", "8236CB", "99154E", "005792", "1F441E"];
+
   let ind = 20;
   let target = [20,20,0];
   let steps = 99;
@@ -137,7 +140,7 @@ export default function App() {
       let parent1 = Math.floor(Math.random() * newWheel.length - 1);
       let parent2 = Math.floor(Math.random() * newWheel.length - 1);
       //console.log(parent1, parent2);
-      console.log(allPaths[newWheel[parent1]], allPaths[newWheel[parent2]]);
+      //console.log(allPaths[newWheel[parent1]], allPaths[newWheel[parent2]]);
     }
   }, [allPaths[0].length])
 
@@ -156,10 +159,11 @@ export default function App() {
           <Box position={target} scale={[6, 6, 6]} color={"#e03c00"}/>
           {allPaths.length > 1 &&
           <>
-          {allPaths.map((paths) => {
+          {allPaths.map((paths, index) => {
             return(
                 paths.map((beePath)=>{
-                  return <Sphere position={[beePath[0],beePath[1],beePath[2]]} scale={[0.3, 0.3, 0.3]} color={"#1184f7"}/>
+                  //console.log(index);
+                  return <Sphere position={[beePath[0],beePath[1],beePath[2]]} scale={[0.3, 0.3, 0.3]} color={"#" + hexaColors[index]}/>
                 })
             )
           })}
