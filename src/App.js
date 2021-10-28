@@ -35,14 +35,21 @@ function Box({position, scale, color}) {
 export default function App() {
 
   const [allMovements, setAllMovements] = useState([0,0,0]);
-  const [allPaths, setAllPaths] = useState([[0,0,0]]);
+  const [allPaths, setAllPaths] = useState({
+    one: [[0,0,0,0,0,0]],
+    two: [[0,0,0,0,0,0]],
+    three: [[0,0,0,0,0,0]],
+    four: [[0,0,0,0,0,0]]
+  });
+  const [generation, setGeneration] = useState(0);
 
   let hexaColors = ["F43B86", "3D087B", "77D970", "172774", "A2D2FF", "FF865E", "1C7947", "00C1D4", "185ADB", "FC92E3",
                     "A6F0C6", "FF414D", "480032", "FEE440", "290FBA", "F8485E", "8236CB", "99154E", "005792", "1F441E"];
+  let generationStep = ["one", "two", "three", "four"];
 
   let ind = 20;
   let target = [20,20,0];
-  let steps = 99;
+  let steps = 49;
 
   useEffect(() => {
     let initialPositions = [];
@@ -51,14 +58,14 @@ export default function App() {
     }
     let initialPaths = [];
     for (let i = 0; i < ind; i++) {
-      initialPaths.push([[0,0,0]]);
+      initialPaths.push([[0,0,0,0,0,0]]);
     }
     setAllMovements(()=>{
       return initialPositions;
     });
 
-    setAllPaths(()=>{
-      return initialPaths;
+    setAllPaths((oldPaths)=>{
+      return {...oldPaths, [generationStep[generation]]: initialPaths};
     });
 
     let counter = 0;
@@ -68,6 +75,7 @@ export default function App() {
       setAllMovements((old) => {
         if(counter > steps){
           clearInterval(timer);
+          setGeneration(generation + 1);
         }
 
         //Multiple Points
@@ -86,17 +94,17 @@ export default function App() {
             z = -1;
           };
 
-          let newPoint = [old[i][0] + x * 2, old[i][1] + y * 2, old[i][2] + z * 2];
+          let newPoint = [old[i][0] + x * 2, old[i][1] + y * 2, old[i][2] + z * 2, x, y, z];
           if(old[i][0] > 15 && old[i][0] < 25 && old[i][1] > 15 && old[i][1] < 25 && old[i][2] > -5 && old[i][2] < 5){
             newStep.push(old[i]);
             setAllPaths((oldPaths) => {
-              oldPaths[i].push(old[i]);
+              oldPaths[generationStep[generation]][i].push(old[i]);
               return oldPaths;
             });
           } else {
             newStep.push(newPoint);
             setAllPaths((oldPaths) => {
-              oldPaths[i].push(newPoint);
+              oldPaths[generationStep[generation]][i].push(newPoint);
               return oldPaths;
             });
           }
@@ -112,37 +120,137 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if(allPaths[0].length === steps + 2){
+    console.log(allPaths);
+    console.log(generation);
+    if(generation > 0){
+      console.log("here");
       let finalDistances = [];
-      for (let i = 0; i < allPaths.length; i++) {
-        let x = allPaths[i][allPaths[i].length - 1][0];
+      for (let i = 0; i < allPaths[generationStep[generation - 1]].length; i++) {
+        let x = allPaths[generationStep[generation - 1]][i][allPaths[generationStep[generation - 1]][i].length - 1][0];
         let aa = (x - target[0]) * (x - target[0]);
-        let y = allPaths[i][allPaths[i].length - 1][1];
+        let y = allPaths[generationStep[generation - 1]][i][allPaths[generationStep[generation - 1]][i].length - 1][1];
         let bb = (y - target[1]) * (y - target[1]);
-        let z = allPaths[i][allPaths[i].length - 1][2];
+        let z = allPaths[generationStep[generation - 1]][i][allPaths[generationStep[generation - 1]][i].length - 1][2];
         let cc = (z - target[2]) * (z - target[2]);
         finalDistances.push((1/Math.sqrt(aa + bb + cc)) * (1/Math.sqrt(aa + bb + cc)));
       }
       let sum = finalDistances.reduce(function (previousValue, currentValue) {
         return previousValue + currentValue
       }, 0);
-      //console.log(sum);
       let percentage = finalDistances.map((value) => Math.round((value/sum) * 100));
-      //console.log(percentage);
       let newWheel = [];
       for (let j = 0; j < percentage.length; j++) {
         for (let i = 0; i < percentage[j]; i++) {
-          //console.log(j);
           newWheel.push(j);
         }
       }
       //console.log(newWheel);
-      let parent1 = Math.floor(Math.random() * newWheel.length - 1);
-      let parent2 = Math.floor(Math.random() * newWheel.length - 1);
-      //console.log(parent1, parent2);
-      //console.log(allPaths[newWheel[parent1]], allPaths[newWheel[parent2]]);
+
+      let newPopulation = [];
+
+      for (let i = 0; i < ind; i++) {
+        let parent1 = Math.floor(Math.random() * (newWheel.length - 1));
+        let parent2 = Math.floor(Math.random() * (newWheel.length - 1));
+
+        let crossPoint = Math.floor(Math.random() * (allPaths[generationStep[generation]][0].length - 1));
+
+        let whichParent = Math.floor(Math.random() * (2));
+
+        let newChild = [];
+/*
+        console.log(newWheel);
+        console.log(newWheel[parent1]);
+
+        console.log(allPaths[generationStep[generation - 1]]);
+
+        console.log(allPaths[generationStep[generation - 1]][newWheel[parent1]]);
+*/
+        if(whichParent){
+          for (let i = 0; i < allPaths[generationStep[generation - 1]][0].length; i++) {
+            if(crossPoint > i){
+              newChild.push(allPaths[generationStep[generation - 1]][newWheel[parent1]][i]);
+            } else {
+              newChild.push(allPaths[generationStep[generation - 1]][newWheel[parent2]][i])
+            }
+          }
+        } else {
+          for (let i = 0; i < allPaths[generationStep[generation - 1]][0].length; i++) {
+            if(crossPoint > i){
+              newChild.push(allPaths[generationStep[generation - 1]][newWheel[parent2]][i]);
+            } else {
+              newChild.push(allPaths[generationStep[generation - 1]][newWheel[parent1]][i])
+            }
+          }
+        }
+        newPopulation.push(newChild);
+      }
+
+      //console.log(newPopulation);
+
+      let initialPaths = [];
+      for (let i = 0; i < ind; i++) {
+        initialPaths.push([[0,0,0,0,0,0]]);
+      }
+      let initialPositions = [];
+      for (let i = 0; i < ind; i++) {
+        initialPositions.push([0,0,0]);
+      };
+      setAllMovements(()=>{
+        return initialPositions;
+      });
+
+      setAllPaths((oldPaths)=>{
+        return {...oldPaths, [generationStep[generation]]: initialPaths};
+      });
+
+      console.log(generation);
+
+      let counter = 0;
+      let timer = setInterval(()=>{
+        counter = counter + 1;
+
+        setAllMovements((old) => {
+          if(counter > steps){
+            clearInterval(timer);
+            if(generation < 3){
+              setGeneration(generation + 1);
+            }
+          }
+
+          //Multiple Points
+          let newStep = [];
+          for(let i = 0; i < ind; i++){
+            let x = newPopulation[i][counter][3];
+            let y = newPopulation[i][counter][4];
+            let z = newPopulation[i][counter][5];
+
+            let newPoint = [old[i][0] + x * 2, old[i][1] + y * 2, old[i][2] + z * 2, x, y, z];
+            if(old[i][0] > 15 && old[i][0] < 25 && old[i][1] > 15 && old[i][1] < 25 && old[i][2] > -5 && old[i][2] < 5){
+              newStep.push(old[i]);
+              setAllPaths((oldPaths) => {
+                oldPaths[generationStep[generation]][i].push(old[i]);
+                return oldPaths;
+              });
+            } else {
+              newStep.push(newPoint);
+              setAllPaths((oldPaths) => {
+                oldPaths[generationStep[generation]][i].push(newPoint);
+                return oldPaths;
+              });
+            }
+          }
+
+          return newStep;
+
+        })
+      }, 100);
+
     }
-  }, [allPaths[0].length])
+  }, [generation])
+
+  useEffect(() => {
+    //console.log(allPaths[generationStep[generation]]);
+  }, [allPaths[generationStep]])
 
   return (
     <div className="main">
@@ -157,16 +265,55 @@ export default function App() {
             })
           }
           <Box position={target} scale={[6, 6, 6]} color={"#e03c00"}/>
-          {allPaths.length > 1 &&
+          {allPaths.one.length > 1 &&
           <>
-          {allPaths.map((paths, index) => {
-            return(
-                paths.map((beePath)=>{
-                  //console.log(index);
-                  return <Sphere position={[beePath[0],beePath[1],beePath[2]]} scale={[0.3, 0.3, 0.3]} color={"#" + hexaColors[index]}/>
-                })
-            )
-          })}
+            {allPaths.one.map((paths, index) => {
+              return(
+                  paths.map((beePath)=>{
+                    //console.log(index);
+                    return <Sphere position={[beePath[0],beePath[1],beePath[2]]} scale={[0.3, 0.3, 0.3]} color={"#2ded07"}/>
+                  })
+              )
+            })}
+          </>
+          }
+
+          {allPaths.two.length > 1 &&
+          <>
+            {allPaths.two.map((paths, index) => {
+              return(
+                  paths.map((beePath)=>{
+                    //console.log(index);
+                    return <Sphere position={[beePath[0],beePath[1],beePath[2]]} scale={[0.3, 0.3, 0.3]} color={"#373de6"}/>
+                  })
+              )
+            })}
+          </>
+          }
+
+          {allPaths.three.length > 1 &&
+          <>
+            {allPaths.three.map((paths, index) => {
+              return(
+                  paths.map((beePath)=>{
+                    //console.log(index);
+                    return <Sphere position={[beePath[0],beePath[1],beePath[2]]} scale={[0.3, 0.3, 0.3]} color={"#f26005"}/>
+                  })
+              )
+            })}
+          </>
+          }
+
+          {allPaths.four.length > 1 &&
+          <>
+            {allPaths.four.map((paths, index) => {
+              return(
+                  paths.map((beePath)=>{
+                    //console.log(index);
+                    return <Sphere position={[beePath[0],beePath[1],beePath[2]]} scale={[0.3, 0.3, 0.3]} color={"#f2f205"}/>
+                  })
+              )
+            })}
           </>
           }
       </Canvas>
